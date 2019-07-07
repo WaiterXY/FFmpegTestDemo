@@ -17,4 +17,13 @@
         android:layout_height="wrap_content"
         android:text="@string/demo_button_open_system_photo_file"/>
 
+    <TextView
+        android:id="@+id/txtTwo"
+        android:layout_width="200dp"
+        android:layout_height="64dp"
+        android:layout_marginTop="100dp"
+        android:textSize="18sp"
+        android:gravity="center"
+        android:text="@string/demo_explain" />
+
 </RelativeLayout>

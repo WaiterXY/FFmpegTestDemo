@@ -203,7 +203,7 @@ public class MainActivity extends AppCompatActivity {
         final long endTime = SystemClock.currentThreadTimeMillis();
         Log.d("tag", "result = " + result);
         Toast.makeText(this, "视频处理完毕，耗时" + (endTime - startTime) + "毫秒"
-                + " 请在" + videoFilePath + "中查看 4：3 视频文件", Toast.LENGTH_LONG).show();
+                + " 请在" + changedVideoPath + "中查看 4：3 视频文件", Toast.LENGTH_LONG).show();
         showAskDialog();
     }
 
