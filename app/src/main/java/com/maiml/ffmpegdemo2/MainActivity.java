@@ -2,32 +2,22 @@ package com.maiml.ffmpegdemo2;
 
 import android.content.ActivityNotFoundException;
 import android.content.ContentUris;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.SystemClock;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
 import android.widget.Toast;
-
-import com.bumptech.glide.Glide;
 import com.maiml.ffmpeglibrary.FFmpeg;
-
 import java.io.File;
-import java.util.Calendar;
-import java.util.HashMap;
-
 import static android.os.SystemClock.currentThreadTimeMillis;
 
 public class MainActivity extends AppCompatActivity {
@@ -50,7 +40,6 @@ public class MainActivity extends AppCompatActivity {
                 chooseVideo();
             }
         });
-
     }
 
     @Override
@@ -71,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
     // 判断视频的高宽比
     private void getVideoHWScale() {
         Log.d(Tag, "getVideoHWScale invoke！" + " VideoPath is ->" + videoPath);
-//        获取视频参数
+        // 获取视频参数
         mExtractVideoInfoUtil = new ExtractVideoInfoUtil(videoPath);
         int videoWidth = mExtractVideoInfoUtil.getVideoWidth();
         int videoHeight = mExtractVideoInfoUtil.getVideoHeight();
@@ -103,16 +92,16 @@ public class MainActivity extends AppCompatActivity {
 
         if (DocumentsContract.isDocumentUri(this, uri)) {
             String docId = DocumentsContract.getDocumentId(uri);
+
             if ("com.android.providers.media.documents".equals(uri.getAuthority())) {
                 Log.d(Tag, "PathType->:" + 1);
                 Log.d(Tag, uri.toString());
                 String id = docId.split(":")[1];
-                Log.d(Tag, "videoPath-id>:" + id);
+                Log.d(Tag, "videoId->:" + id);
 //                String selection = MediaStore.Images.Media._ID + "=" + id;
                 String selection = MediaStore.Video.Media._ID + "=" + id;
-                Log.d(Tag, "videoPath-selection>:" + selection);
                 videoPath = getVideoPath(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, selection);
-                Log.d(Tag, "videoPath-11>:" + videoPath);
+
             } else if ("com.android.providers.downloads.documents".equals(uri.getAuthority())) {
                 Log.d(Tag, "PathType->:" + 2);
                 Log.d(Tag, uri.toString());
@@ -121,13 +110,14 @@ public class MainActivity extends AppCompatActivity {
                         Long.valueOf(docId));
                 videoPath = getVideoPath(contentUri, null);
             }
+
         } else if ("content".equalsIgnoreCase(uri.getScheme())) {
             Log.d(Tag, "PathType->:" + 3);
             Log.d(Tag, "content: " + uri.toString());
             videoPath = getVideoPath(uri, null);
             Log.d(Tag, "videoPath->:" + videoPath);
         }
-        Log.d(Tag, "videoPath-final>:" + videoPath);
+        Log.d(Tag, "videoPath->:" + videoPath);
         // 获取文件名
         videoFileName = videoPath.substring(videoPath.lastIndexOf("/") + 1);
         // 获取文件夹路径
@@ -167,13 +157,13 @@ public class MainActivity extends AppCompatActivity {
         int finalWidth = (finalHeight - videoHeight) / 2;
         Log.d("finalHeight", finalHeight + "");
         Log.d("finalWidth", finalWidth + "");
-
+        // 生成 ffmpeg 命令
+        // e.g.:ffmpeg -i /storage/emulated/0/DCIM/Camera/VID_20190706_211040.mp4 -vf pad=540:720:30 -b:v 7905760 /storage/emulated/0/DCIM/Camera/Changed_VID_20190706_211040.mp4
         final StringBuilder builder = new StringBuilder();
         builder.append("ffmpeg ");
         builder.append("-i ");
         builder.append(uri + " ");
         builder.append("-vf ");
-//        builder.append("pad=540:720:30:0:black ");
         builder.append("pad=");
         builder.append(finalHeight + "");
         builder.append(":");
@@ -196,24 +186,24 @@ public class MainActivity extends AppCompatActivity {
             builder.append("-b:v ");
             builder.append(videoBitRate + " ");
 //        }
-
         builder.append(videoFilePath);
         // 通过加时间戳的方式命名，防止文件覆盖
 //        builder.append("Changed_" + Calendar.getInstance().getTimeInMillis() + "_" + videoFileName);
         builder.append("Changed_" + videoFileName);
         Log.d(Tag, "command = " + builder.toString());
 
-        final long startTime = currentThreadTimeMillis();
-        int i = FFmpeg.getsInstance().executeCommand(builder.toString().split(" "));
-        final long endTime = SystemClock.currentThreadTimeMillis();
-        Log.e("tag", "----- res = " + i);
-        Toast.makeText(this, "视频处理完毕，耗时" + (endTime - startTime) + "毫秒" + " 请在" + videoFilePath + "中查看 4：3 视频文件", Toast.LENGTH_LONG).show();
-//        生成视频所处的路径
+        // 生成视频所处的路径
         final StringBuilder builder1 = new StringBuilder();
         builder1.append(videoFilePath);
         builder1.append("Changed_" + videoFileName);
         changedVideoPath = builder1.toString();
-//        openAssignFolder(finalVideoPath);
+
+        final long startTime = currentThreadTimeMillis();
+        int result = FFmpeg.getsInstance().executeCommand(builder.toString().split(" "));
+        final long endTime = SystemClock.currentThreadTimeMillis();
+        Log.d("tag", "result = " + result);
+        Toast.makeText(this, "视频处理完毕，耗时" + (endTime - startTime) + "毫秒"
+                + " 请在" + videoFilePath + "中查看 4：3 视频文件", Toast.LENGTH_LONG).show();
         showAskDialog();
     }
 
@@ -277,6 +267,5 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
-
 
 }
