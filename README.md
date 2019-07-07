@@ -39,8 +39,8 @@ int exit_program(int ret)
 int exit_program(int ret);
 ```
 修改ffmpeg.c与ffmpeg.h
-找到ffmpeg.c，把int main(int argc, char argv) 改名为 int run(int argc, char argv) （名字可以随便起）
-找到ffmpeg.h, 在文件末尾添加函数申明: int run(int argc, char **argv);（需要和ffmpeg.c 所起名字保持一致）
+找到ffmpeg.c，把int main(int argc, char argv) 改名为 int execute(int argc, char argv) （名字可以随便起）
+找到ffmpeg.h, 在文件末尾添加函数申明: int execute(int argc, char **argv);（需要和ffmpeg.c 所起名字保持一致）
 
 ###编写文件调用：
 ```code
@@ -64,7 +64,7 @@ Java_com_maiml_ffmpeglibrary_FFmpeg_run(JNIEnv *env, jobject instance, jobjectAr
 到这里就可以运行FFmpeg命令了。一直我也是这样使用，但是我在做这个项目[Cut](http://sj.qq.com/myapp/detail.htm?apkName=com.miaml.mcut)的时候发现连续调用多次FFmpeg命令会报错（在项目需要，先改变分镜头的速度，再合成视频）。
 为什么会这样的呢？
 FFmpeg每次执行完命令后会调用 ffmpeg_cleanup 函数清理内存，并且会调用exit(0)结束当前进程，但是经过我们的修改，exit()的代码已经被删掉，而我们的App还在运行，不能杀死进程，所以有些变量的值还在内存中，这样就会导致下次执行的时候可能会出错。
-打开ffmpeg.c找到刚修改的run函数，然后在 return 前加上如下代码即可:
+打开ffmpeg.c找到刚修改的execute函数，然后在 return 前加上如下代码即可:
 ```code
  nb_filtergraphs = 0;
      progress_avio = NULL;

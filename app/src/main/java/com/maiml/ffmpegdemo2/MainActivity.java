@@ -3,15 +3,19 @@ package com.maiml.ffmpegdemo2;
 import android.content.ActivityNotFoundException;
 import android.content.ContentUris;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.SystemClock;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -32,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
     private String videoPath = null;
     private String videoFileName;
     private String videoFilePath;
+    private String changedVideoPath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,7 +57,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         // 当 requstCode 为 1001，且 data 不为空时，处理视频信息
-        if (requestCode == 1001 && data!= null) {
+        if (requestCode == 1001 && data != null) {
+//            Toast toast = Toast.makeText(this, "开始处理视频文件，请稍候~~", Toast.LENGTH_LONG);
+//            toast.setGravity(Gravity.TOP, 0, 0);
+//            toast.show();
             Uri uri = data.getData();
             Log.d(Tag, "VideoUri-->" + uri);
             handleImageOnKitKat(data);
@@ -63,18 +71,23 @@ public class MainActivity extends AppCompatActivity {
     // 判断视频的高宽比
     private void getVideoHWScale() {
         Log.d(Tag, "getVideoHWScale invoke！" + " VideoPath is ->" + videoPath);
+//        获取视频参数
         mExtractVideoInfoUtil = new ExtractVideoInfoUtil(videoPath);
         int videoWidth = mExtractVideoInfoUtil.getVideoWidth();
         int videoHeight = mExtractVideoInfoUtil.getVideoHeight();
+        int videoBitRate = mExtractVideoInfoUtil.getVideoBitrate();
         Log.d(Tag, "VideoWidth:" + videoWidth);
         Log.d(Tag, "VideoHeight:" + videoHeight);
+        Log.d(Tag, "videoBitRate:" + videoBitRate);
+
         float scale = (float) videoHeight / (float) videoWidth;
         float scale_edge_max = 1.34f;
         float scale_edge_min = 1.32f;
         Log.d(Tag, "scale=" + scale);
+
         if (scale >= scale_edge_max || scale < scale_edge_min) {
             Log.d(Tag, "scale is not 4:3, need to add black edging！");
-            addBlackEdge(videoHeight, videoWidth, videoPath, videoPath);
+            addBlackEdge(videoHeight, videoWidth, videoBitRate, videoPath);
         } else {
             Log.d(Tag, "scale is 4:3！ do nothing");
             Toast.makeText(this, "视频已经是 4：3 比例，无需转换", Toast.LENGTH_SHORT).show();
@@ -83,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
 
     // 获取本地视频文件的 uri
     private void handleImageOnKitKat(Intent data) {
+
         videoPath = null;
         Uri uri = data.getData();
         Log.d(Tag, "uri-1->" + uri);
@@ -148,13 +162,9 @@ public class MainActivity extends AppCompatActivity {
         startActivityForResult(intent, 1001);
     }
 
-    private void addBlackEdge(int videoHeight, int videoWidth, String uri, String enduri) {
-        String fileList = uri;
-        String path = enduri;
+    private void addBlackEdge(int videoHeight, int videoWidth, int videoBitRate, String uri) {
         int finalHeight = (videoWidth * 3) / 4;
         int finalWidth = (finalHeight - videoHeight) / 2;
-//        long startTime = 0;
-//        long endTime = 0;
         Log.d("finalHeight", finalHeight + "");
         Log.d("finalWidth", finalWidth + "");
 
@@ -171,45 +181,89 @@ public class MainActivity extends AppCompatActivity {
         builder.append(":");
         builder.append(finalWidth + "");
         builder.append(" ");
+        // 边框默认为黑色
 //        builder.append(":");
 //        builder.append("black ");
-        builder.append(videoFilePath);
-        builder.append("Changed_" + Calendar.getInstance().getTimeInMillis() + "_" + videoFileName);
-//        builder.append("video" + "_" + videoFileName);
-//        builder.append("/storage/emulated/0/video_20190707_121900.mp4");
-        Log.e(Tag, "command = " + builder.toString());
+        // 如果是 H264 编码格式的视频，直接使用原画面,否者保留原视频码率
+//        boolean isH264 = true;
+//        if(isH264){
+//            Log.d(Tag,"This video is belong to H264!");
+              // 实验结果表明，加了这个，无法添加黑边
+//            builder.append("-vcodec copy ");
+//        } else {
+//            Log.d(Tag,"This video is not H264");
+            // 设置视频码率
+            builder.append("-b:v ");
+            builder.append(videoBitRate + " ");
+//        }
 
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                final long startTime = currentThreadTimeMillis();
-//                Log.d(Tag, "commands is->" + builder.toString());
-//                FFmpeg.getsInstance().executeCommand(builder.toString().split(" "));
-//                final long endTime = SystemClock.currentThreadTimeMillis();
-//            }
-//        });
-//        Log.d(Tag, "commands is->" + builder.toString());
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                final long startTime = currentThreadTimeMillis();
-//                FFmpeg.getsInstance().executeCommand(commands);
-//                final long endTime = currentThreadTimeMillis();
-//                runOnUiThread(new);
-//            }
-//        });
+        builder.append(videoFilePath);
+        // 通过加时间戳的方式命名，防止文件覆盖
+//        builder.append("Changed_" + Calendar.getInstance().getTimeInMillis() + "_" + videoFileName);
+        builder.append("Changed_" + videoFileName);
+        Log.d(Tag, "command = " + builder.toString());
+
         final long startTime = currentThreadTimeMillis();
         int i = FFmpeg.getsInstance().executeCommand(builder.toString().split(" "));
         final long endTime = SystemClock.currentThreadTimeMillis();
         Log.e("tag", "----- res = " + i);
         Toast.makeText(this, "视频处理完毕，耗时" + (endTime - startTime) + "毫秒" + " 请在" + videoFilePath + "中查看 4：3 视频文件", Toast.LENGTH_LONG).show();
-        openAssignFolder(videoFilePath);
+//        生成视频所处的路径
+        final StringBuilder builder1 = new StringBuilder();
+        builder1.append(videoFilePath);
+        builder1.append("Changed_" + videoFileName);
+        changedVideoPath = builder1.toString();
+//        openAssignFolder(finalVideoPath);
+        showAskDialog();
     }
 
-    private void openAssignFolder(String path){
-        Log.d(Tag,"openAssignFolder is invoke!");
+    private void showAskDialog() {
+        /* @setIcon 设置对话框图标
+         * @setTitle 设置对话框标题
+         * @setMessage 设置对话框消息提示
+         * setXXX方法返回Dialog对象，因此可以链式设置属性
+         */
+        final AlertDialog.Builder normalDialog =
+                new AlertDialog.Builder(MainActivity.this);
+//        normalDialog.setIcon(R.drawable.icon_dialog);
+        normalDialog.setTitle("转化视频比例成功！");
+        normalDialog.setMessage("是否查看转码之后的视频？");
+        normalDialog.setPositiveButton("确定",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        openVideo(changedVideoPath);
+                    }
+                });
+        normalDialog.setNegativeButton("关闭",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        //...To-do
+                        // 打开视频文件所处的文件夹
+//                        openAssignFolder(videoFilePath);
+                        return;
+                    }
+                });
+        // 显示
+        normalDialog.show();
+    }
+
+    // 打开转化之后的视频文件
+    private void openVideo(String path) {
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+//        String path = Environment.getExternalStorageDirectory().getPath()+ path;//该路径可以自定义
         File file = new File(path);
-        if(null==file || !file.exists()){
+        Uri uri = Uri.fromFile(file);
+        intent.setDataAndType(uri, "video/*");
+        startActivity(intent);
+    }
+
+    // 打开转化视频之后的文件夹
+    private void openAssignFolder(String path) {
+        Log.d(Tag, "openAssignFolder is invoke!");
+        File file = new File(path);
+        if (null == file || !file.exists()) {
             return;
         }
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);

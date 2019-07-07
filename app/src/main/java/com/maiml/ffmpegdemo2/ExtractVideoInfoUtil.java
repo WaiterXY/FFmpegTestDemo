@@ -49,6 +49,15 @@ public class ExtractVideoInfoUtil {
         return height;
     }
 
+    public int getVideoBitrate(){
+        String br = mMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
+        int bitRate = -1;
+        if (!TextUtils.isEmpty(br)){
+            bitRate = Integer.valueOf(br);
+        }
+        return bitRate;
+    }
+
     /**
      * 获取视频的典型的一帧图片
      *
