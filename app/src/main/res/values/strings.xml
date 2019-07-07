@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">BIGOTestDemo</string>
+    <string name="demo_button_open_system_photo_file">Choose video to 4:3</string>
+</resources>
