@@ -26,4 +26,6 @@
         android:gravity="center"
         android:text="@string/demo_explain" />
 
+
+
 </RelativeLayout>

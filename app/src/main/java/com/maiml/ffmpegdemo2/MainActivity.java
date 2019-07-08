@@ -1,5 +1,6 @@
 package com.maiml.ffmpegdemo2;
 
+import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ContentUris;
 import android.content.DialogInterface;
@@ -7,14 +8,19 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.os.SystemClock;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 import com.maiml.ffmpeglibrary.FFmpeg;
 import java.io.File;
@@ -27,12 +33,31 @@ public class MainActivity extends AppCompatActivity {
     private String videoFileName;
     private String videoFilePath;
     private String changedVideoPath;
+    private ProgressDialog mProgressDialog;
+    private Handler handler = new Handler(){
+      @Override
+      public void handleMessage(Message msg){
+          switch (msg.what){
+              case 0: //视频处理完成
+                  mProgressDialog.dismiss();
+                  showAskDialog(msg.obj.toString());
+                  break;
+              case 1:
+                  mProgressDialog.dismiss();
+                  toastMessages("抱歉，视频处理失败了😔");
+              default:
+                  break;
+          }
+      }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        //显示ProgressDialog
+        createProgressDialog();
+        mProgressDialog.dismiss();
         Button button1 = (Button) findViewById(R.id.demo_button_open_system_photo_file);
         button1.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -42,14 +67,23 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void toastMessages(String msg) {
+        Toast.makeText(this,msg,Toast.LENGTH_SHORT).show();
+    }
+
+    private void createProgressDialog(){
+        mProgressDialog=new ProgressDialog(this);
+        mProgressDialog.setProgress(ProgressDialog.STYLE_SPINNER);//圆形
+        mProgressDialog.setMessage("视频转化高宽比ing，请您稍等...");
+        mProgressDialog.setCancelable(false);
+        mProgressDialog.show();
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         // 当 requstCode 为 1001，且 data 不为空时，处理视频信息
         if (requestCode == 1001 && data != null) {
-//            Toast toast = Toast.makeText(this, "开始处理视频文件，请稍候~~", Toast.LENGTH_LONG);
-//            toast.setGravity(Gravity.TOP, 0, 0);
-//            toast.show();
             Uri uri = data.getData();
             Log.d(Tag, "VideoUri-->" + uri);
             handleImageOnKitKat(data);
@@ -197,17 +231,31 @@ public class MainActivity extends AppCompatActivity {
         builder1.append(videoFilePath);
         builder1.append("Changed_" + videoFileName);
         changedVideoPath = builder1.toString();
+//        mProgressBar.setVisibility(View.VISIBLE);
+        mProgressDialog.show();
+        new Thread(){
+            @Override
+            public void run(){
+                final long startTime = currentThreadTimeMillis();
+                int result = FFmpeg.getsInstance().executeCommand(builder.toString().split(" "));
+                final long endTime = SystemClock.currentThreadTimeMillis();
+                Log.d("tag", "result = " + result);
 
-        final long startTime = currentThreadTimeMillis();
-        int result = FFmpeg.getsInstance().executeCommand(builder.toString().split(" "));
-        final long endTime = SystemClock.currentThreadTimeMillis();
-        Log.d("tag", "result = " + result);
-        Toast.makeText(this, "视频处理完毕，耗时" + (endTime - startTime) + "毫秒"
-                + " 请在" + changedVideoPath + "中查看 4：3 视频文件", Toast.LENGTH_LONG).show();
-        showAskDialog();
+//                toastMessages("视频处理完成，耗时"+(endTime-startTime)+"毫秒");
+
+                if (result == 0) {
+                    Message msg = new Message();
+                    msg.obj = (endTime - startTime)+"";
+                    msg.what = 0;
+                    handler.sendMessage(msg);
+                } else {
+                    handler.sendEmptyMessage(1);
+                }
+            }
+        }.start();
     }
 
-    private void showAskDialog() {
+    private void showAskDialog(String costTime) {
         /* @setIcon 设置对话框图标
          * @setTitle 设置对话框标题
          * @setMessage 设置对话框消息提示
@@ -216,8 +264,8 @@ public class MainActivity extends AppCompatActivity {
         final AlertDialog.Builder normalDialog =
                 new AlertDialog.Builder(MainActivity.this);
 //        normalDialog.setIcon(R.drawable.icon_dialog);
-        normalDialog.setTitle("转化视频比例成功！");
-        normalDialog.setMessage("是否查看转码之后的视频？");
+        normalDialog.setTitle("转化视频比例成功😊！");
+        normalDialog.setMessage("耗时" + costTime + "毫秒，是否查看转码之后的视频？");
         normalDialog.setPositiveButton("确定",
                 new DialogInterface.OnClickListener() {
                     @Override
