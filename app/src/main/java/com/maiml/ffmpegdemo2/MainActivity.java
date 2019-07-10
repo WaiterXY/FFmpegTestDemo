@@ -22,8 +22,13 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+
 import com.maiml.ffmpeglibrary.FFmpeg;
+
 import java.io.File;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import static android.os.SystemClock.currentThreadTimeMillis;
 
 public class MainActivity extends AppCompatActivity {
@@ -34,21 +39,21 @@ public class MainActivity extends AppCompatActivity {
     private String videoFilePath;
     private String changedVideoPath;
     private ProgressDialog mProgressDialog;
-    private Handler handler = new Handler(){
-      @Override
-      public void handleMessage(Message msg){
-          switch (msg.what){
-              case 0: //视频处理完成
-                  mProgressDialog.dismiss();
-                  showAskDialog(msg.obj.toString());
-                  break;
-              case 1:
-                  mProgressDialog.dismiss();
-                  toastMessages("抱歉，视频处理失败了😔");
-              default:
-                  break;
-          }
-      }
+    private Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case 0: //视频处理完成
+                    mProgressDialog.dismiss();
+                    showAskDialog(msg.obj.toString());
+                    break;
+                case 1:
+                    mProgressDialog.dismiss();
+                    toastMessages("抱歉，视频处理失败了😔");
+                default:
+                    break;
+            }
+        }
     };
 
     @Override
@@ -68,11 +73,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void toastMessages(String msg) {
-        Toast.makeText(this,msg,Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 
-    private void createProgressDialog(){
-        mProgressDialog=new ProgressDialog(this);
+    private void createProgressDialog() {
+        mProgressDialog = new ProgressDialog(this);
         mProgressDialog.setProgress(ProgressDialog.STYLE_SPINNER);//圆形
         mProgressDialog.setMessage("视频转化高宽比ing，请您稍等...");
         mProgressDialog.setCancelable(false);
@@ -212,13 +217,13 @@ public class MainActivity extends AppCompatActivity {
 //        boolean isH264 = true;
 //        if(isH264){
 //            Log.d(Tag,"This video is belong to H264!");
-              // 实验结果表明，加了这个，无法添加黑边
+        // 实验结果表明，加了这个，无法添加黑边
 //            builder.append("-vcodec copy ");
 //        } else {
 //            Log.d(Tag,"This video is not H264");
-            // 设置视频码率
-            builder.append("-b:v ");
-            builder.append(videoBitRate + " ");
+        // 设置视频码率
+        builder.append("-b:v ");
+        builder.append(videoBitRate + " ");
 //        }
         builder.append(videoFilePath);
         // 通过加时间戳的方式命名，防止文件覆盖
@@ -233,26 +238,28 @@ public class MainActivity extends AppCompatActivity {
         changedVideoPath = builder1.toString();
 //        mProgressBar.setVisibility(View.VISIBLE);
         mProgressDialog.show();
-        new Thread(){
+
+        // 创建一个可缓存线程池，如果线程池长度超过处理需要，可灵活回收空闲线程，若无可回收，则新建线程
+        ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
+        cachedThreadPool.execute(new Runnable() {
+
             @Override
-            public void run(){
+            public void run() {
                 final long startTime = currentThreadTimeMillis();
                 int result = FFmpeg.getsInstance().executeCommand(builder.toString().split(" "));
                 final long endTime = SystemClock.currentThreadTimeMillis();
                 Log.d("tag", "result = " + result);
 
-//                toastMessages("视频处理完成，耗时"+(endTime-startTime)+"毫秒");
-
                 if (result == 0) {
                     Message msg = new Message();
-                    msg.obj = (endTime - startTime)+"";
+                    msg.obj = (endTime - startTime) + "";
                     msg.what = 0;
                     handler.sendMessage(msg);
                 } else {
                     handler.sendEmptyMessage(1);
                 }
             }
-        }.start();
+        });
     }
 
     private void showAskDialog(String costTime) {
