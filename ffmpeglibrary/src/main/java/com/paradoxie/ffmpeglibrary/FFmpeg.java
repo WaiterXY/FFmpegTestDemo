@@ -1,8 +1,4 @@
-package com.maiml.ffmpeglibrary;
-
-/**
- * Created by maimingliang on 2017/7/18.
- */
+package com.paradoxie.ffmpeglibrary;
 
 public class FFmpeg {
 

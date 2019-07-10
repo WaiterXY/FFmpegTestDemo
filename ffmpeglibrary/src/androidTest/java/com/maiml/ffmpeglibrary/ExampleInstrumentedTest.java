@@ -1,4 +1,4 @@
-package com.maiml.ffmpeglibrary;
+package com.paradoxie.ffmpeglibrary;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.maiml.ffmpeglibrary.test", appContext.getPackageName());
+        assertEquals("com.paradoxie.ffmpeglibrary.test", appContext.getPackageName());
     }
 }

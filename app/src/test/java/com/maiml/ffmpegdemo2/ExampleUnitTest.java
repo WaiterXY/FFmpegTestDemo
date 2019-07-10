@@ -1,4 +1,4 @@
-package com.maiml.ffmpegdemo2;
+package com.paradoxie.ffmpegdemo2;
 
 import org.junit.Test;
 

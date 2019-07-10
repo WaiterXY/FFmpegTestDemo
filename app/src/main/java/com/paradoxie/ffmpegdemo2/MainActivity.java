@@ -1,4 +1,4 @@
-package com.maiml.ffmpegdemo2;
+package com.paradoxie.ffmpegdemo2;
 
 import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
@@ -16,14 +16,10 @@ import android.provider.MediaStore;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
-import android.widget.FrameLayout;
-import android.widget.ProgressBar;
 import android.widget.Toast;
-
-import com.maiml.ffmpeglibrary.FFmpeg;
+import com.paradoxie.ffmpeglibrary.FFmpeg;
 
 import java.io.File;
 import java.util.concurrent.ExecutorService;

@@ -27,7 +27,7 @@ extern "C" {
 #include "android/native_window.h"
 
 JNIEXPORT jstring JNICALL
-Java_com_maiml_ffmpeglibrary_FFmpeg_avcodecinfo(JNIEnv *env, jobject instance) {
+Java_com_paradoxie_ffmpeglibrary_FFmpeg_avcodecinfo(JNIEnv *env, jobject instance) {
 
     char info[40000] = {0};
     av_register_all();
@@ -59,7 +59,7 @@ Java_com_maiml_ffmpeglibrary_FFmpeg_avcodecinfo(JNIEnv *env, jobject instance) {
 
 extern "C"
 jstring
-Java_com_maiml_ffmpegdemo2_MainActivity_stringFromJNI(
+Java_com_paradoxie_ffmpegdemo2_MainActivity_stringFromJNI(
         JNIEnv *env,
         jobject /* this */) {
 
@@ -110,7 +110,7 @@ void my_logcat(void *ptr, int level, const char *fmt, va_list vl) {
 
 
 JNIEXPORT jint JNICALL
-Java_com_maiml_ffmpeglibrary_FFmpeg_execute(JNIEnv *env, jobject instance, jobjectArray commands) {
+Java_com_paradoxie_ffmpeglibrary_FFmpeg_execute(JNIEnv *env, jobject instance, jobjectArray commands) {
 
     // TODO
     av_log_set_callback(my_logcat);
@@ -126,7 +126,7 @@ Java_com_maiml_ffmpeglibrary_FFmpeg_execute(JNIEnv *env, jobject instance, jobje
 }
 
 JNIEXPORT jint JNICALL
-Java_com_maiml_ffmpeglibrary_FFmpeg_play(JNIEnv *env, jobject instance, jobject surface,jstring path_) {
+Java_com_paradoxie_ffmpeglibrary_FFmpeg_play(JNIEnv *env, jobject instance, jobject surface,jstring path_) {
 
     // TODO
     const char *file_name = env->GetStringUTFChars(path_, 0);

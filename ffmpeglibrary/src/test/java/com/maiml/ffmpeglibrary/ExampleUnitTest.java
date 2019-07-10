@@ -1,4 +1,4 @@
-package com.maiml.ffmpeglibrary;
+package com.paradoxie.ffmpeglibrary;
 
 import org.junit.Test;
 
