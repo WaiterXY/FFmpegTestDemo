@@ -19,6 +19,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+
 import com.paradoxie.ffmpeglibrary.FFmpeg;
 
 import java.io.File;
@@ -99,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
         mExtractVideoInfoUtil = new ExtractVideoInfoUtil(videoPath);
         int videoWidth = mExtractVideoInfoUtil.getVideoWidth();
         int videoHeight = mExtractVideoInfoUtil.getVideoHeight();
-        int videoBitRate = mExtractVideoInfoUtil.getVideoBitrate();
+        String videoBitRate = mExtractVideoInfoUtil.getVideoBitrate() + "";
         Log.d(Tag, "VideoWidth:" + videoWidth);
         Log.d(Tag, "VideoHeight:" + videoHeight);
         Log.d(Tag, "videoBitRate:" + videoBitRate);
@@ -110,7 +111,8 @@ public class MainActivity extends AppCompatActivity {
         Log.d(Tag, "scale=" + scale);
 
         if (scale >= scale_edge_max || scale < scale_edge_min) {
-            Log.d(Tag, "scale is not 4:3, need to add black edging！");
+            Log.d(Tag, "scale is not 4:3, need to add black edge！");
+//            videoPath = dealVideoPathSpace(videoPath);
             addBlackEdge(videoHeight, videoWidth, videoBitRate, videoPath);
         } else {
             Log.d(Tag, "scale is 4:3！ do nothing");
@@ -187,45 +189,66 @@ public class MainActivity extends AppCompatActivity {
         startActivityForResult(intent, 1001);
     }
 
-    private void addBlackEdge(int videoHeight, int videoWidth, int videoBitRate, String uri) {
+    private void addBlackEdge(int videoHeight, int videoWidth, String videoBitRate, String uri) {
         int finalHeight = (videoWidth * 3) / 4;
         int finalWidth = (finalHeight - videoHeight) / 2;
         Log.d("finalHeight", finalHeight + "");
         Log.d("finalWidth", finalWidth + "");
         // 生成 ffmpeg 命令
         // e.g.:ffmpeg -i /storage/emulated/0/DCIM/Camera/VID_20190706_211040.mp4 -vf pad=540:720:30 -b:v 7905760 /storage/emulated/0/DCIM/Camera/Changed_VID_20190706_211040.mp4
-        final StringBuilder builder = new StringBuilder();
-        builder.append("ffmpeg ");
-        builder.append("-i ");
-        builder.append(uri + " ");
-        builder.append("-vf ");
-        builder.append("pad=");
-        builder.append(finalHeight + "");
-        builder.append(":");
-        builder.append(videoWidth + "");
-        builder.append(":");
-        builder.append(finalWidth + "");
-        builder.append(" ");
-        // 边框默认为黑色
+//        final StringBuilder builder = new StringBuilder();
+//        builder.append("ffmpeg ");
+//        builder.append("-i ");
+////        builder.append("\"");
+//        builder.append(uri);
+////        builder.append("\"");
+//        builder.append(" ");
+//        builder.append("-vf ");
+//        builder.append("pad=");
+//        builder.append(finalHeight + "");
 //        builder.append(":");
-//        builder.append("black ");
-        // 如果是 H264 编码格式的视频，直接使用原画面,否者保留原视频码率
-//        boolean isH264 = true;
-//        if(isH264){
-//            Log.d(Tag,"This video is belong to H264!");
-        // 实验结果表明，加了这个，无法添加黑边
-//            builder.append("-vcodec copy ");
-//        } else {
-//            Log.d(Tag,"This video is not H264");
-        // 设置视频码率
-        builder.append("-b:v ");
-        builder.append(videoBitRate + " ");
-//        }
-        builder.append(videoFilePath);
-        // 通过加时间戳的方式命名，防止文件覆盖
-//        builder.append("Changed_" + Calendar.getInstance().getTimeInMillis() + "_" + videoFileName);
-        builder.append("Changed_" + videoFileName);
-        Log.d(Tag, "command = " + builder.toString());
+//        builder.append(videoWidth + "");
+//        builder.append(":");
+//        builder.append(finalWidth + "");
+//        builder.append(" ");
+//        // 边框默认为黑色
+////        builder.append(":");
+////        builder.append("black ");
+//        // 如果是 H264 编码格式的视频，直接使用原画面,否者保留原视频码率
+////        boolean isH264 = true;
+////        if(isH264){
+////            Log.d(Tag,"This video is belong to H264!");
+//        // 实验结果表明，加了这个，无法添加黑边
+////            builder.append("-vcodec copy ");
+////        } else {
+////            Log.d(Tag,"This video is not H264");
+//        // 设置视频码率
+//        builder.append("-b:v ");
+//        builder.append(videoBitRate + " ");
+////        }
+//        builder.append(videoFilePath);
+//        // 通过加时间戳的方式命名，防止文件覆盖
+////        builder.append("Changed_" + Calendar.getInstance().getTimeInMillis() + "_" + videoFileName);
+//        builder.append("Changed_" + videoFileName);
+
+
+//        解决路径带空格问题
+        final StringBuilder builder2 = new StringBuilder();
+        builder2.append("pad=");
+        builder2.append(finalHeight + "");
+        builder2.append(":");
+        builder2.append(videoWidth + "");
+        builder2.append(":");
+        builder2.append(finalWidth + "");
+
+        final StringBuilder builder3 = new StringBuilder();
+        builder3.append(videoFilePath);
+        builder3.append("Changed_" + videoFileName);
+
+        final String[] strings = new String[]{"ffmpeg", "-i", uri, "-vf", builder2.toString(), "-b:v", videoBitRate, builder3.toString()};
+
+
+//        Log.d(Tag, "command = " + builder.toString());
 
         // 生成视频所处的路径
         final StringBuilder builder1 = new StringBuilder();
@@ -242,7 +265,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 final long startTime = currentThreadTimeMillis();
-                int result = FFmpeg.getsInstance().executeCommand(builder.toString().split(" "));
+                int result = FFmpeg.getsInstance().executeCommand(strings);
                 final long endTime = SystemClock.currentThreadTimeMillis();
                 Log.d("tag", "result = " + result);
 
@@ -317,6 +340,17 @@ public class MainActivity extends AppCompatActivity {
         } catch (ActivityNotFoundException e) {
             e.printStackTrace();
         }
+    }
+
+    // 处理存在空格的文件路径
+    private String dealVideoPathSpace(String uri) {
+        String dealedUri = uri.replaceAll(" ", "%20");
+        Log.d(Tag, "dealedUri is:" + dealedUri);
+        return dealedUri;
+    }
+
+    public String addQuotes(String s) {
+        return "\"" + s + "\"";
     }
 
 }
